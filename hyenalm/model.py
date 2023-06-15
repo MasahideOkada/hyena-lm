@@ -70,37 +70,49 @@ class HyenaLM(nn.Module):
         x = self.out(x) # (B, L, E) -> (B, L, V)
         return x
 
-def generate(
-    model: HyenaLM,
-    prompt: str,
-    output_len: int,
-    encoder: Callable[[str], list[int]],
-    decoder: Callable[[list[int]], str],
-    max_seq_len: int,
-    bos: int,
-    eos: int,
-    k: int = 10,
-    temperature: float = 1.0,
-    device: Any = torch.device("cpu")
-) -> str:
-    # L: seq len, V: vocab size, K: k
-    model.eval()
-    model.to(device=device)
-    tokens = encoder(prompt)
-    tokens.insert(0, bos)
-    while len(tokens) < output_len + 1:
-        x = torch.unsqueeze(
-            torch.tensor(tokens[-max_seq_len:], dtype=torch.long, device=device), 0
-        ) # -> (1, L)
-        logits = model(x)[0, -1, :] # -> (V)
+class Generator:
+    def __init__(
+        self,
+        model: HyenaLM,
+        encoder: Callable[[str], list[int]],
+        decoder: Callable[[list[int]], str],
+        max_seq_len: int,
+        bos: int,
+        eos: int,
+        device: Any = torch.device("cpu")
+    ):
+        self.model = model.to(device=device)
+        self.encoder = encoder
+        self.decoder = decoder
+        self.max_seq_len = max_seq_len
+        self.bos = bos
+        self.eos = eos
+        self.device = device
 
-        values, indices = torch.topk(logits, k) # -> (K) for each
-        probas = torch.full_like(logits, float("-inf")) # -> (V)
-        probas.scatter_(0, indices, values)
-        probas = fn.softmax(probas / temperature, dim=-1) # (V) -> (V)
-        next_token = torch.multinomial(probas, 1).item()
+    def generate(
+        self,
+        prompt: str,
+        output_len: int,
+        k: int = 10,
+        temperature: float = 1.0,
+    ) -> str:
+        # L: seq len, V: vocab size, K: k
+        self.model.eval()
+        tokens = self.encoder(prompt)
+        tokens.insert(0, self.bos)
+        while len(tokens) < output_len + 1:
+            x = torch.unsqueeze(
+                torch.tensor(tokens[-self.max_seq_len:], dtype=torch.long, device=self.device), 0
+            ) # -> (1, L)
+            logits = self.model(x)[0, -1, :] # -> (V)
 
-        if next_token == eos: break
-        tokens.append(next_token)
-    output = decoder(tokens)
-    return output
+            values, indices = torch.topk(logits, k) # -> (K) for each
+            probas = torch.full_like(logits, float("-inf")) # -> (V)
+            probas.scatter_(0, indices, values)
+            probas = fn.softmax(probas / temperature, dim=-1) # (V) -> (V)
+            next_token = torch.multinomial(probas, 1).item()
+
+            if next_token == self.eos: break
+            tokens.append(next_token)
+        output = self.decoder(tokens)
+        return output
