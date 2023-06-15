@@ -54,9 +54,9 @@ class HyenaLM(nn.Module):
             case _: raise NotImplementedError(f"positional encoding `{name}` is invalid")
         self.pos_embed = nn.Parameter(pos_embed, requires_grad=pe_requires_grad)
 
-        self.layers = nn.Sequential()
-        for _ in range(depth):
-            self.layers.append(HyenaBlock(**asdict(hyena_config)))
+        self.layers = nn.Sequential(
+            *[HyenaBlock(**asdict(hyena_config)) for _ in range(depth)]
+        )
         self.norm = nn.LayerNorm(embed_dim)
         self.out = nn.Linear(embed_dim, vocab_size)
 
