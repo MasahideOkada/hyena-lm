@@ -221,6 +221,7 @@ class HyenaBlock(nn.Module):
             v = x_i * self.fftconv(v, h_i, d_i)
         y = u + v.transpose(1, 2) # -> (B, L, E)
         out = self.norm2(y) # (B, L, E) -> (B, L, E)
-        out = y + self.fc(out) # (B, L, E) -> (B, L, E)
-        out = self.act(out)
+        out = self.fc(out) # (B, L, E) -> (B, L, E)
+        out = self.act(out) # (B, L, E) -> (B, L, E)
+        out += y
         return out
