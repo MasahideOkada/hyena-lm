@@ -45,7 +45,7 @@ class HyenaLM(nn.Module):
         self.dropout = nn.Dropout(p_dropout)
 
         pos_embed: Tensor
-        pe_requires_grad = True
+        pe_requires_grad = False
         match name := pe_type.lower():
             case "fixed":
                 pos_embed = torch.zeros(1, max_seq_len, embed_dim)
@@ -54,12 +54,11 @@ class HyenaLM(nn.Module):
                 theta = omega * pos
                 pos_embed[..., 0::2] = torch.sin(theta)
                 pos_embed[..., 1::2] = torch.cos(theta)
-                pe_requires_grad = False
             case "absolute":
                 pos_embed = torch.randn(1, max_seq_len, embed_dim)
+                pe_requires_grad = True
             case "nope":
                 pos_embed = torch.zeros(1, max_seq_len, embed_dim)
-                pe_requires_grad = False
             case _: raise NotImplementedError(f"positional encoding `{name}` is invalid")
         self.pos_embed = nn.Parameter(pos_embed, requires_grad=pe_requires_grad)
 
