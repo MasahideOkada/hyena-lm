@@ -40,16 +40,25 @@ class HyenaLM(nn.Module):
         super().__init__()
         self.vocab_size = vocab_size
         embed_dim = hyena_config.embed_dim
+        max_seq_len = hyena_config.max_seq_len
         self.embed = nn.Embedding(vocab_size, embed_dim, padding_idx=pad_id)
         self.dropout = nn.Dropout(p_dropout)
 
         pos_embed: Tensor
         pe_requires_grad = True
         match name := pe_type.lower():
+            case "fixed":
+                pos_embed = torch.zeros(1, max_seq_len, embed_dim)
+                omega = 1. / (10000 ** (torch.arange(0, embed_dim, 2, dtype=torch.float) / embed_dim))
+                pos = torch.arange(0, max_seq_len, dtype=torch.float).unsqueeze(-1)
+                theta = omega * pos
+                pos_embed[..., 0::2] = torch.sin(theta)
+                pos_embed[..., 1::2] = torch.cos(theta)
+                pe_requires_grad = False
             case "absolute":
-                pos_embed = torch.randn(1, hyena_config.max_seq_len, embed_dim)
+                pos_embed = torch.randn(1, max_seq_len, embed_dim)
             case "nope":
-                pos_embed = torch.zeros(1, hyena_config.max_seq_len, embed_dim)
+                pos_embed = torch.zeros(1, max_seq_len, embed_dim)
                 pe_requires_grad = False
             case _: raise NotImplementedError(f"positional encoding `{name}` is invalid")
         self.pos_embed = nn.Parameter(pos_embed, requires_grad=pe_requires_grad)
