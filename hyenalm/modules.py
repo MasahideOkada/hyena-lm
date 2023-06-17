@@ -98,8 +98,8 @@ class HyenaFilter(nn.Module):
         max_seq_len: int,
         seq_embed_dim: int,
         order: int = 2,
-        ffn_depth: int = 4,
-        ffn_hidden_size: int = 64,
+        fnn_depth: int = 4,
+        fnn_hidden_size: int = 64,
         freq: float = 10.0,
         learn: bool = True,
         fast_decay_t: float = 0.3,
@@ -107,18 +107,18 @@ class HyenaFilter(nn.Module):
         target: float = 1e-2,
         shift: float = 0.0
     ):
-        assert ffn_depth > 2, "`ffn_depth` must be greater than 2"
+        assert fnn_depth > 2, "`fnn_depth` must be greater than 2"
         super().__init__()
         self.pos = PositionalEncoding(pos_embed_dim, max_seq_len)
 
-        self.ffn = nn.Sequential(
-            nn.Linear(pos_embed_dim, ffn_hidden_size),
-            Sin(ffn_hidden_size, freq, learn)
+        self.fnn = nn.Sequential(
+            nn.Linear(pos_embed_dim, fnn_hidden_size),
+            Sin(fnn_hidden_size, freq, learn)
         )
-        for _ in range(ffn_depth - 2):
-            self.ffn.append(nn.Linear(ffn_hidden_size, ffn_hidden_size))
-            self.ffn.append(Sin(ffn_hidden_size, freq, learn))
-        self.ffn.append(nn.Linear(ffn_hidden_size, order * seq_embed_dim, bias=False))
+        for _ in range(fnn_depth - 2):
+            self.fnn.append(nn.Linear(fnn_hidden_size, fnn_hidden_size))
+            self.fnn.append(Sin(fnn_hidden_size, freq, learn))
+        self.fnn.append(nn.Linear(fnn_hidden_size, order * seq_embed_dim, bias=False))
 
         self.embed_dim = seq_embed_dim
         self.order = order
@@ -134,7 +134,7 @@ class HyenaFilter(nn.Module):
         # L: seq len, Ep: pos embed dim, N: order of hyena, E: seq embed dim
         t, z = self.pos(seq_len) # -> (1, 1, L), (L, Ep)
         h = (
-            self.ffn(z) # (L, Ep) -> (L, N*E)
+            self.fnn(z) # (L, Ep) -> (L, N*E)
             .transpose(0, 1) # (L, N*E) -> (N*E, L)
             .reshape(self.order, self.embed_dim, seq_len) # (N*E, L) -> (N, E, L)
         )
@@ -152,8 +152,8 @@ class HyenaBlock(nn.Module):
         kernel_size: int = 3,
         stride: int = 1,
         padding: int = 2,
-        ffn_depth: int = 4,
-        ffn_hidden_size: int = 64,
+        fnn_depth: int = 4,
+        fnn_hidden_size: int = 64,
         freq: float = 8.0,
         learn_filter: bool = True,
         fast_decay_t: float = 0.3,
@@ -175,8 +175,8 @@ class HyenaBlock(nn.Module):
             max_seq_len,
             seq_embed_dim=embed_dim,
             order=order,
-            ffn_depth=ffn_depth,
-            ffn_hidden_size=ffn_hidden_size,
+            fnn_depth=fnn_depth,
+            fnn_hidden_size=fnn_hidden_size,
             freq=freq,
             learn=learn_filter,
             fast_decay_t=fast_decay_t,
