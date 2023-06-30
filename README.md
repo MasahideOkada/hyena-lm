@@ -16,7 +16,7 @@ Language model with [Hyena Hierarchy](https://arxiv.org/abs/2302.10866)
 import torch
 from hyenalm.model import HyenaConfig, HyenaLM
 
-embed_dim=32
+embed_dim = 32
 max_seq_len = 32
 vocab_size = 100
 depth = 3
@@ -27,7 +27,11 @@ config = HyenaConfig(
     activation="gelu"
 )
 model = HyenaLM(vocab_size, depth, hyena_config=config)
+loss_fn = nn.CrossEntropyLoss()
 
 x = torch.randint(0, vocab_size, (1, max_seq_len))
-model(x)
+y = torch.randint(0, vocab_size, (1, max_seq_len))
+logits = model(x)
+loss = loss_fn(logits.transpose(1, 2), y)
+loss.backward()
 ```
