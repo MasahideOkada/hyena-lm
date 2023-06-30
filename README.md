@@ -16,12 +16,13 @@ Language model with [Hyena Hierarchy](https://arxiv.org/abs/2302.10866)
 import torch
 from hyenalm.model import HyenaConfig, HyenaLM
 
+embed_dim=32
 max_seq_len = 32
 vocab_size = 100
 depth = 3
 
 config = HyenaConfig(
-    embed_dim=32,
+    embed_dim=embed_dim,
     max_seq_len=max_seq_len,
     activation="gelu"
 )
