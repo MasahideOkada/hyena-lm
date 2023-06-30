@@ -6,7 +6,7 @@ from torch import Tensor
 import torch.nn as nn
 import torch.nn.functional as fn
 
-from modules import HyenaBlock
+from .modules import HyenaBlock
 
 @dataclass(frozen=True)
 class HyenaConfig:
@@ -17,8 +17,8 @@ class HyenaConfig:
     kernel_size: int = 3
     stride: int = 1
     padding: int = 2
-    ffn_depth: int = 4
-    ffn_hidden_size: int = 64
+    fnn_depth: int = 4
+    fnn_hidden_size: int = 64
     freq: float = 8.0
     learn_filter: bool = True
     fast_decay_t: float = 0.3
