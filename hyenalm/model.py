@@ -35,7 +35,7 @@ class HyenaLM(nn.Module):
         hyena_config: HyenaConfig,
         p_dropout: float = 0.0,
         pe_type: str = "absolute",
-        pad_id: int = 0
+        pad_id: int | None = 0
     ):
         super().__init__()
         self.vocab_size = vocab_size
